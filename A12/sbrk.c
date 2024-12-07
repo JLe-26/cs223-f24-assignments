@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <unistd.h>
+#include <stdio.h>
 
 #define MAX_HEAP 64*1024*4096
 

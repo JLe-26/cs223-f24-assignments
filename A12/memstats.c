@@ -1,3 +1,12 @@
+/*
+* This program implements the function memstats to print information
+* such as the total num of memory blocks allocated (in-use and free)
+* as well as the amount of underutilizsed memory (%).
+*
+* Underutilized memory is the percent of memory that has been allocated
+* by sbrk but not being used by the application.
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -17,6 +26,50 @@ struct chunk {
 };
 
 void memstats(struct chunk* freelist, void* buffer[], int len) {
+  int total_blocks, free_blocks, used_blocks = 0;
+  int total_mem, free_mem, used_mem = 0;
+
+  struct chunk *next = freelist;
+  while (next != NULL) {
+    total_blocks++;
+    free_blocks++;
+    total_mem += next->size;
+    free_mem += next->size - next->used; // requested size - used memory = free memory
+    next = next->next;
+  }
+
+  for (int i = 0; i < len; i++) {
+    
+    if (buffer[i] == NULL) {
+      
+      continue;
+    }
+
+    // Move ptr to the chunk header just before the allocated memory block (move by sizeof chunk bytes)
+    struct chunk *cnk = (struct chunk*) ((char*)buffer[i] - sizeof(struct chunk));
+    
+    total_blocks++;
+
+    if (cnk->used > 0) {
+      used_blocks++;
+      used_mem += cnk->used;
+    } else {
+      free_blocks++;
+      free_mem += cnk->size;
+    }
+  }
+
+
+  // Compute underutilized memory
+  float under_mem = 0.0;
+  if(total_mem > 0) {
+    under_mem = (free_mem * 100.0) / total_mem;
+  }
+  
+  // Print information
+  printf("Total blocks: %d Free blocks: %d Used blocks: %d \n", total_blocks, free_blocks, used_blocks);
+  printf("Total memory allocated: %d Free memory: %d Used memory: %d \n", total_mem, free_mem, used_mem);
+  printf("Underutilized memory: %.2f\n", under_mem);
 }
 
 int main ( int argc, char* argv[]) {
